@@ -4,7 +4,7 @@ import numpy as np
 
 class YOLOModel:
     def __init__(self):
-        self.model = YOLO("yolov8n.pt")
+        self.model = YOLO("./models/yolo/olov8n.pt")
 
     def predict(self, input_path, output_path, polygon_data):
         # 입력 파일 확장자 확인
@@ -43,10 +43,10 @@ class YOLOModel:
                     x1, y1, x2, y2 = map(int, box.xyxy[0]);
                     cx, cy = (x1 + x2) // 2, (y1 + y2) // 2;
                     if cv2.pointPolygonTest(pts, (cx, cy), False) >= 0 :
-                        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 2);
+                        cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 0, 255), 3);
                 
                 # ROI 그리기
-                cv2.polylines(annotated_frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2);
+                cv2.polylines(annotated_frame, [pts], isClosed=True, color=(0, 255, 0), thickness=4);
 
                 out.write(annotated_frame)
 
