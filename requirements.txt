@@ -1,5 +1,12 @@
-fastapi==0.115.12
+# requirements.txt
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+fastapi==0.115.1
 uvicorn==0.34.2
-ultralytics==8.0.176
+torch==2.6.0+cu118
+torchvision==0.21.0+cu118
+torchaudio==2.6.0+cu118
+ultralytics==8.3.107
 pillow==11.2.1
 python-multipart==0.0.20
+opencv-python==4.11.0.86
