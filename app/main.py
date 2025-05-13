@@ -4,7 +4,6 @@ import shutil
 import os
 
 app = FastAPI()
-# model = YOLOModel("yolov8n.pt")
 
 @app.get("/")
 async def root():
@@ -23,3 +22,7 @@ async def predict_yolo(file: UploadFile = File(...)):
     # 파일 저장
     with open(input_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer);
+
+    # 모델 호출
+    model = YOLOModel();
+    model.predict(input_path, output_path);
