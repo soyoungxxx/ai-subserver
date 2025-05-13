@@ -39,7 +39,7 @@ async def predict_yolo(
     # output 디렉토리 내 결과 WAS로 전송
     return {"output": output_path, "data": polygon_data};
 
-# Unet 일반 추록
+# Unet 일반 추론
 @app.post("/predict/unet")
 async def predict_unet(
     file: UploadFile = File(...),
