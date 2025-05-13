@@ -16,14 +16,13 @@ class YOLOModel:
             fps = cap.get(cv2.CAP_PROP_FPS)
 
             fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+            out = cv2.VideoWriter(output_path, fourcc, round(fps), (width, height))
 
             while cap.isOpened():
                 ret, frame = cap.read()
                 if not ret:
-                    print("프레임 읽기 실패, grab 시도")
-                    cap.grab()  # 다음 프레임으로 강제로 건너뜀
-                    continue
+                    print("영상 끝 또는 손상된 프레임입니다.");
+                    break;
 
                 # 추론
                 results = self.model(frame)
