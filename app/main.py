@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, Form
+from typing import Optional
 from models.yolo.yolo_model import YOLOModel
 from schemas.yolo_schemas import Polygon
 import shutil
@@ -14,7 +15,7 @@ async def root():
 @app.post("/predict/yolo")
 async def predict_yolo(
     file: UploadFile = File(...),
-    polygon_json: str = Form(...),
+    polygon_json: Optional[str] = Form(None),
 ):
     # input / output 경로 지정
     input_path = f"temp/input_{file.filename}";
@@ -32,7 +33,7 @@ async def predict_yolo(
 
     # 모델 호출
     model = YOLOModel();
-    model.predict(input_path, output_path);
+    model.predict(input_path, output_path, polygon_data);
 
     # output 디렉토리 내 결과 WAS로 전송
     return {"output": output_path, "data": polygon_data};
