@@ -405,5 +405,6 @@ venv/
 
 # AI Model File
 *.pth
+*.pt
 temp/
 sample/

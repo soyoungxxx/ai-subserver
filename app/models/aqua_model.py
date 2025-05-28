@@ -54,7 +54,7 @@ WATER_CLASSES = [1]
 #     # 저장
 #     cv2.imwrite(output_path, blended)
 
-def detect_aqua(input_path, output_path):
+def detect_aqua(input_path, output_path, polygon_data=None):
     model = load_model(NUM_CLASSES, RESTORE_FROM)
     model.eval().cuda()
 
@@ -73,33 +73,59 @@ def detect_aqua(input_path, output_path):
             ret, frame = cap.read()
             if not ret:
                 break
-            blended = process_frame(model, frame)
+            blended = process_frame(model, frame, polygon_data)
             out.write(blended)
 
         cap.release()
         out.release()
     else:
         image = cv2.imread(input_path)
-        blended = process_frame(model, image)
+        blended = process_frame(model, image, polygon_data)
         cv2.imwrite(output_path, blended)
 
-def process_frame(model, frame):
+def process_frame(model, frame, polygon_data=None):
     orig_h, orig_w = frame.shape[:2]
+
+    # 전체 이미지로 탐지
     resized = cv2.resize(frame, (PADDING_SIZE, PADDING_SIZE))
     img_tensor = transforms.ToTensor()(Image.fromarray(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))).unsqueeze(0).cuda()
 
     with torch.no_grad():
         pred = model(img_tensor)
+
     pred = F.interpolate(pred, size=(PADDING_SIZE, PADDING_SIZE), mode='bilinear', align_corners=True)
     pred = pred.cpu().data[0].numpy().transpose(1, 2, 0)
     pred = np.argmax(pred, axis=2).astype(np.uint8)
     pred = cv2.resize(pred, (orig_w, orig_h), interpolation=cv2.INTER_NEAREST)
 
+    # ROI 마스크 생성
+    roi_mask = None
+    if polygon_data:
+        roi_mask = np.zeros((orig_h, orig_w), dtype=np.uint8)
+        for poly in polygon_data:
+            pts = np.array([[int(p.x), int(p.y)] for p in poly.points], dtype=np.int32)
+            cv2.fillPoly(roi_mask, [pts], 255)
+
+    # 결과 마스크 생성
     color_mask = np.zeros_like(frame)
     for cid in WATER_CLASSES:
-        color_mask[pred == cid] = [0, 0, 255]
+        mask = (pred == cid)
+        if roi_mask is not None:
+            mask = np.logical_and(mask, roi_mask == 255)
+        color_mask[mask] = [0, 0, 255]
+
     blended = cv2.addWeighted(frame, 1.0, color_mask, 0.9, 0)
+
+    # ROI 윤곽선 시각화
+    if polygon_data:
+        for poly in polygon_data:
+            pts = np.array([[int(p.x), int(p.y)] for p in poly.points], dtype=np.int32)
+            cv2.polylines(blended, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+
     return blended
+
+
+
 
 
 def build_model(NUM_CLASSES, RESTORE_FROM):

@@ -5,5 +5,7 @@ class Point(BaseModel) :
     x: float
     y: float
 
-class Polygon(BaseModel) :
-    polygon: List[Point]
+class Polygon(BaseModel):
+    id: int
+    name: str
+    points: List[Point]
