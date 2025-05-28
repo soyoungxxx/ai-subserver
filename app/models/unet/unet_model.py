@@ -53,7 +53,7 @@ class UNet(nn.Module):
 class UNetModel:
     def __init__(self, unet_model_path="./models/unet/model.pth"):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.image_size = (1024, 1024)
+        self.image_size = (764, 764)
         
         self.model = UNet(n_channels=3, n_classes=2).to(self.device)
         state_dict = torch.load(unet_model_path, map_location=self.device)
@@ -62,7 +62,7 @@ class UNetModel:
         self.model.load_state_dict(state_dict)
         self.model.eval()
 
-    def predict(self, input_path, output_path, polygon_data):
+    def predict(self, input_path, output_path, polygon_data=None):
          # 입력 파일 확장자 확인
         is_video = input_path.lower().endswith(('.mp4', '.avi', '.mov'))
         transform = transforms.Compose([
@@ -77,14 +77,20 @@ class UNetModel:
             height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
             fps = cap.get(cv2.CAP_PROP_FPS)
             
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fourcc = cv2.VideoWriter_fourcc(*'avc1')
             out = cv2.VideoWriter(output_path, fourcc, round(fps), (width, height))
+
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            frame_idx = 0   
 
             while True:
                 ret, frame = cap.read()
                 if not ret:
+                    print("영상 끝 또는 손상된 프레임입니다.");
                     break
-
+                frame_idx += 1
+                progress = (frame_idx / total_frames) * 100
+                print(f"[{frame_idx}/{total_frames}] 탐지중... ({progress:.1f}%)")
                 h, w = frame.shape[:2]
                 resized = cv2.resize(frame, self.image_size)
 
@@ -97,8 +103,8 @@ class UNetModel:
 
                 # mask → 파란색 overlay 만들기
                 color_mask = np.zeros_like(frame)
-                color_mask[mask == 1] = [255, 0, 0]  # 수체는 파란색 (BGR)
-                blended = cv2.addWeighted(frame, 0.8, color_mask, 0.2, 0)
+                color_mask[mask == 1] = [0, 0, 255]  # 수체는 파란색 (BGR)
+                blended = cv2.addWeighted(frame, 0.9, color_mask, 0.3, 0)
 
                 out.write(blended)
             
@@ -116,6 +122,6 @@ class UNetModel:
                 mask = torch.argmax(output.squeeze(), dim=0).cpu().numpy()
                 mask = cv2.resize(mask, (w, h), interpolation=cv2.INTER_NEAREST)
             color_mask = np.zeros_like(img)
-            color_mask[mask == 1] = [255, 0, 0]
-            blended = cv2.addWeighted(img, 0.8, color_mask, 0.2, 0)
+            color_mask[mask == 1] = [0, 0, 255]
+            blended = cv2.addWeighted(img, 0.9, color_mask, 0.3, 0)
             cv2.imwrite(output_path, blended)
