@@ -1,10 +1,13 @@
 import shutil
 import json
+import time
 from models.aqua_model import detect_aqua
 from models.yolo_model import YOLOModel
 from schemas.schemas import Polygon
 
 async def handle_mix_detection(file, polygon_json):
+    filename = f"{int(time.time() * 1000)}_{file.filename}"
+    
     input_path = f"temp/Mix/input/{file.filename}"
     output_path = f"temp/Mix/output/{file.filename}"
 
@@ -16,9 +19,8 @@ async def handle_mix_detection(file, polygon_json):
     model = YOLOModel()
     data = model.predict(input_path, output_path, polygon_data);
 
-    detect_aqua(output_path, output_path, polygon_data);
-
-
+    final_output_path = f"temp/Mix/output/{filename}"
+    detect_aqua(output_path, final_output_path, polygon_data);
 
     print(output_path)
 
