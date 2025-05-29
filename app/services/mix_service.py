@@ -22,6 +22,4 @@ async def handle_mix_detection(file, polygon_json):
     final_output_path = f"temp/Mix/output/{filename}"
     detect_aqua(output_path, final_output_path, polygon_data);
 
-    print(output_path)
-
-    return {"output": output_path, "data": data}
+    return {"output": final_output_path, "data": data}
