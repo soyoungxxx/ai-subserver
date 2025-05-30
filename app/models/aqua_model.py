@@ -4,8 +4,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.backends.cudnn as cudnn
-# from utils import colorize_mask
 from torchvision import transforms
 from PIL import Image
 
@@ -15,44 +13,9 @@ from torchvision.models._utils import IntermediateLayerGetter
 BatchNorm2d = nn.BatchNorm2d
 
 PADDING_SIZE = 768
-RESTORE_FROM = './weights/aqua/model.pth'
+RESTORE_FROM = './weights/aqua/model003.pth'
 NUM_CLASSES = 2
 WATER_CLASSES = [1]
-
-# def detect_aqua(input_path, output_path):
-#     model = load_model(NUM_CLASSES, RESTORE_FROM)
-#     model.eval()
-#     model.cuda()
-
-#     cudnn.enabled = True
-#     cudnn.benchmark = True
-
-#     image = cv2.imread(input_path)
-#     orig_h, orig_w = image.shape[:2]
-
-#     # 전처리
-#     resized = cv2.resize(image, (PADDING_SIZE, PADDING_SIZE))
-#     img_tensor = transforms.ToTensor()(Image.fromarray(cv2.cvtColor(resized, cv2.COLOR_BGR2RGB))).unsqueeze(0).cuda()
-
-#     with torch.no_grad():
-#         pred = model(img_tensor)
-#     pred = F.interpolate(pred, size=(PADDING_SIZE, PADDING_SIZE), mode='bilinear', align_corners=True)
-#     pred = pred.cpu().data[0].numpy().transpose(1, 2, 0)
-#     pred = np.asarray(np.argmax(pred, axis=2), dtype=np.uint8)
-
-#     # 원본 해상도로 resize
-#     pred = cv2.resize(pred, (orig_w, orig_h), interpolation=cv2.INTER_NEAREST)
-
-#     # 빨간색 마스크 생성
-#     color_mask = np.zeros_like(image)
-#     for cid in WATER_CLASSES:
-#         color_mask[pred == cid] = [0, 0, 255]
-
-#     # alpha blending
-#     blended = cv2.addWeighted(image, 1.0, color_mask, 0.9, 0)
-
-#     # 저장
-#     cv2.imwrite(output_path, blended)
 
 def detect_aqua(input_path, output_path, polygon_data=None):
     model = load_model(NUM_CLASSES, RESTORE_FROM)
@@ -124,23 +87,6 @@ def process_frame(model, frame, polygon_data=None):
 
     return blended
 
-
-
-
-
-def build_model(NUM_CLASSES, RESTORE_FROM):
-    model = Aquanet(num_classes=NUM_CLASSES)
-
-    saved_state_dict = torch.load(RESTORE_FROM)
-    new_params = model.backbone.state_dict().copy()
-    for key, value in saved_state_dict.items():
-        if key.split(".")[0] not in ["fc"]:
-            new_params[key] = value
-    model.backbone.load_state_dict(new_params)
-
-    return model
-
-
 def load_model(NUM_CLASSES, RESTORE_FROM):
     model = Aquanet(num_classes=NUM_CLASSES)
 
@@ -163,10 +109,10 @@ class Aquanet(nn.Module):
         }
         self.backbone = IntermediateLayerGetter(resnet, return_layers=return_layers)
 
-        # 2. Context 모듈 (기존 AquaNet 구조 일부 유지)
+        # 2. Context 모듈
         self.context = nn.Sequential(
             nn.Conv2d(2048, 256, kernel_size=3, stride=1, padding=1),
-            BatchNorm2d(256),
+            nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
             nn.Dropout2d(0.1),
         )
